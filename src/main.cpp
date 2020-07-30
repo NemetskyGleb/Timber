@@ -2,11 +2,20 @@
 #include <sstream>
 #include <iostream>
 using namespace sf;
-const float ratio = 1.4055;
+
+const float ratio = 1.4055; // to compatibility with 1366 x 768 resolution
+const int NUM_BRANCHES = 6;
+
+void updateBranches(int seed);
+Sprite branches[NUM_BRANCHES];
+// Where is the player/branch?
+// Left ot Right
+enum class side { LEFT, RIGHT, NONE };
+side branchPositions[NUM_BRANCHES];
+
 
 int main()
 {
-
 	// Create and open a window for the game
 	RenderWindow window(VideoMode::getDesktopMode(), "Timber!!");
 	View view(sf::FloatRect(0, 0, 1366, 768));
@@ -118,6 +127,22 @@ int main()
 	messageText.setPosition(1366 / 2.0f, 768 / 2.0f);
 	scoreText.setPosition(20, 20);
 
+	// Prepare 6 branches
+	Texture textureBranch;
+	textureBranch.loadFromFile("/Templates/c++/timber/graphics/branch.png");
+	// Set the texture for each branch sprite
+	for (int i = 0; i < NUM_BRANCHES; i++) {
+		branches[i].setTexture(textureBranch);
+		branches[i].setPosition(-2000/ratio, -2000/ratio);
+		// Set the sprite's origin to dead center
+		// We can then spin it round without changing its position
+		branches[i].setOrigin(220, 20);
+	}
+	updateBranches(1);
+	updateBranches(2);
+	updateBranches(3);
+	updateBranches(4);
+	updateBranches(5);
 	while(window.isOpen()) {
 		/*
 		***********************************************
@@ -141,7 +166,6 @@ int main()
 		Update the scene
 		**************************************
 		*/
-
 		if (!paused) {
 			// Measure time
 			Time dt = clock.restart();
@@ -255,6 +279,26 @@ int main()
 			std::stringstream ss;
 			ss << "Score = " << score;
 			scoreText.setString(ss.str()); 
+			// Update the branch sprites
+			for (int i = 0; i < NUM_BRANCHES; i++) {
+				float height = i * 150 / ratio;
+				if (branchPositions[i] == side::LEFT) {
+					// Move the sprite to the left side
+					branches[i].setPosition(610/ratio, height);
+					// Flip the sprite round the other way
+					branches[i].setRotation(180);
+				}
+				else if (branchPositions[i] == side::RIGHT) {
+					// Move the sprite to the right side
+					branches[i].setPosition(1330/ratio, height);
+					// Flip the sprite round the other way
+					branches[i].setRotation(0);
+				}
+				else {
+					// Hide the branch
+					branches[i].setPosition(3000/ratio, height);
+				}
+			}
 		}
 		/*
 		**************************************
@@ -270,6 +314,11 @@ int main()
 		window.draw(spriteCloud1);
 		window.draw(spriteCloud2);
 		window.draw(spriteCloud3);
+
+		// Draw the branches
+		for (int i = 0; i < NUM_BRANCHES; i++) {
+			window.draw(branches[i]);
+		}
 
 		// Draw the tree
 		window.draw(spriteTree);
@@ -294,4 +343,24 @@ int main()
 
 
     return 0;
+}
+
+void updateBranches(int seed) {
+	for (int j = NUM_BRANCHES - 1; j > 0; j--)
+		branchPositions[j] = branchPositions[j - 1];
+	// Spawn a new branch at position 0
+	// LEFT, RIGHT ot NONE
+	srand((int)time(0) + seed);
+	int r = (rand() % 5);
+	switch (r) {
+		case 0:
+			branchPositions[0] = side::LEFT;
+			break;
+		case 1:
+			branchPositions[0] = side::RIGHT;
+			break;
+		default:
+			branchPositions[0] = side::NONE;
+			break;
+	}
 }
